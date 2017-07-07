@@ -3,7 +3,7 @@
  * Plugin Name: P2P Export/Import
  * Description: Demonstrates how P2P information can be added to an export redux and
  * 	used by importer redux
- * Version: 0.1
+ * Version: 0.1.1
  * Author: Paul V. Biron/Sparrow Hawk Computing
  * Author URI: http://sparrowhawkcomputing.com/
  * Plugin URI: https://github.com/pbiron/p2p-export-import
@@ -375,7 +375,7 @@ class P2P_Import {
 			}
 
 			if ( is_string( $this->map[$key] ) ) {
-				$data[ $keymap[$key] ] = $data[ $key ];
+				$data[ $this->map[$key] ] = $value;
 				unset ( $data[ $key ] );
 			}
 		}
@@ -461,7 +461,7 @@ class P2P_Import {
 				}
 
 				$data['to'] = $to_id;
-				$data = $this->remap_xml_keys( $data, $this->map );
+				$data = $this->remap_xml_keys( $data );
 
 				$this->insert_p2p( $data, $metas );
 			}
