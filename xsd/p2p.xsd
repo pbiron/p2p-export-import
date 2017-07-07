@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema
+		xmlns:xs='http://www.w3.org/2001/XMLSchema'
+		xmlns:wxr='http://wordpress.org/export/'
+		elementFormDefault='qualified'
+		targetNamespace='http://scribu.net/wordpress/posts-to-posts/'>
+
+	<xs:annotation>
+		<xs:documentation>
+			This is an XML Schema 1.1 schema for WXR 1.3-proposed extension markup
+			for P2P information produced by the P2P Exporter plugin available at
+			https://github.com/pbiron/p2p-exporter.
+			
+			This the markup this schema defines is NOT officially sanctioned by the
+			author of the P2P plugin.  It is defined merely as an example of how
+			plugins can add extension markup to WXR 1.3-proposed that is produced
+			by the Exporter Redux plugin available at https://github.com/pbiron/WordPress-Exporter.
+		</xs:documentation>
+		<xs:documentation>
+			Author: Paul V. Biron/Sparrow Hawk Computing
+			Email: paul@SparrowHawkComputing.com
+			Web: http://sparrowhawkcomputing.com
+			WordPress: pbiron
+			Slack: pbiron
+		</xs:documentation>
+		<xs:documentation>
+			This schema is available at https://raw.githubusercontent.com/pbiron/p2p-exporter/master/xsd/p2p.xsd.
+		</xs:documentation>
+	</xs:annotation>
+
+	<xs:import namespace='http://wordpress.org/export/' schemaLocation='https://raw.githubusercontent.com/pbiron/wxr/master/1.3-proposed/wxr.xsd'>
+		<xs:annotation>
+			<xs:documentation>
+				Import the WXR schema so that we can refer to the wxr:key and wxr:post_type simple types.
+			</xs:documentation>
+			<xs:documentation>
+				Note: retrieving the WXR 1.3-proposed schema document from GitHub is an expensive
+				operation.  Thus, when validating WXR instances that contain elements from this namespace,
+				it is a good idea to either: 1) use whatever catalog features are available with your
+				XML Schema processor to override @schemaLocation; or 2) download the WXR 1.3-proposed
+				schema to your local machine and modify @schemaLocation appropriately.
+			</xs:documentation>
+		</xs:annotation>
+	</xs:import>
+
+	<xs:element name='p2p'>
+		<xs:annotation>
+			<xs:documentation>
+				Represents a row from the p2p custom table, and possibly one or more rows
+				from the p2pmeta table.
+			</xs:documentation>
+			<xs:documentation>
+				Note that the p2p_from column is not exported, since the 'from'
+				end of the relationship is specified by the /rss/channel/item element
+				we are a child of.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:all>
+				<xs:element name='to' type='wxr:key'>
+					<xs:annotation>
+						<xs:documentation>
+							Represents the post_name of the WP_Post 'linked to'.
+						</xs:documentation>
+						<xs:documentation>
+							Note that the actual value of the column in the p2p table
+							is the post ID of the 'to' end of the relationship.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name='to_type' type='wxr:post_type'>
+					<xs:annotation>
+						<xs:documentation>
+							Represents the post_type of the WP_Post 'linked to'.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name='type' type='xs:string'>
+					<xs:annotation>
+						<xs:documentation>
+							Represents the p2p_type column.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name='meta' minOccurs='0' maxOccurs='unbounded'>
+					<xs:annotation>
+						<xs:documentation>
+							Represents a row from the p2pmeta custom table associated
+							with this p2p row.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:all>
+							<xs:element name='key' type='wxr:key'>
+								<xs:annotation>
+									<xs:documentation>
+										Represents the meta_key.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name='value' type='xs:string'>
+								<xs:annotation>
+									<xs:documentation>
+										Represents the meta_value.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+						</xs:all>
+					</xs:complexType>
+				</xs:element>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

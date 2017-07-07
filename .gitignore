@@ -1,0 +1,6 @@
+*.scss
+.sass-cache
+.buildpath
+.project
+.settings
+vendor

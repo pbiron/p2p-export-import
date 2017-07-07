@@ -1,0 +1,28 @@
+{
+	"name"       : "p2p-export-import",
+	"description": "Demonstrates how P2P information can be added to an export and used by importer redux.",
+	"keywords"   : ["wordpress"],
+	"type"       : "wordpress-plugin",
+	"homepage"   : "https://github.com/pbiron/p2p-export-import",
+	"license"    : "GPL-2.0+",
+	"authors"    : [
+		{
+			"name"    : "Paul V. Biron/Sparrow Hawk Computing",
+			"homepage": "http://sparrowhawkcomputing.com",
+			"role"    : "Developer"
+		},
+		{
+			"name"    : "Contributors",
+			"homepage": "https://github.com/pbiron/p2p-export-import/graphs/contributors"
+		}
+	],
+	"support"    : {
+		"issues": "https://github.com/pbiron/p2p-export-import/issues"
+	},
+	"require"    : {
+		"php"                      : ">=5.4",
+		"composer/installers"      : "~1.0",
+		"scribu/lib-posts-to-posts": "dev-master@dev",
+		"scribu/scb-framework"     : "dev-master@dev"
+	}
+}
