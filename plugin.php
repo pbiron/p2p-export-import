@@ -14,8 +14,8 @@
 
 /*
  * This plugin is intended to be used in conjunction with the WordPress Exporter Redux
- * plugin (http://github.com/pbiron/WordPress-Exporter) and WordPress Importer Redux
- * plugin (http://github.com/pbiron/WordPress-Importer).
+ * plugin (https://github.com/pbiron/wordpress-exporter-v2) and WordPress Importer Redux
+ * plugin (https://github.com/pbiron/wordpress-importer-v2).
  *
  * I thought it would be a good test of the utility of the `wxr_export_post` action
  * in the WordPress Exporter Redux plugin to generate an export of
