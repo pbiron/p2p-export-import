@@ -51,16 +51,14 @@ class P2P_Export {
 	 *
 	 * @var string
 	 */
-	const NAMESPACE_URI = 'http://scribu.net/wordpress/posts-to-posts/';
+	const P2P_NAMESPACE_URI = 'http://scribu.net/wordpress/posts-to-posts/';
 
 	/**
-	 * Our preferred namespace prefix.
+	 * Our "preferred" namespace prefix.
 	 *
-	 * Note that this prefix might be modified in P2P_Export::unique_prefix().
-
 	 * @var string
 	 */
-	protected $prefix = 'p2p';
+	const P2P_PREFIX = 'p2p';
 
 	/**
 	 * Whether the p2pmeta table exists.
@@ -72,9 +70,21 @@ class P2P_Export {
 	protected $meta_exists = false;
 
 	/**
-	 * Hook actions and filters
+	 * Whether we've written extension markup
+	 *
+	 * @var bool
+	 */
+	protected $markup_output = false;
+
+	/**
+	 * Constructor.
+	 *
+	 * Initialize P2P, hook actions and filters.
 	 */
 	function __construct() {
+		/**
+		 * @global wpdb $wpdb.
+		 */
 		global $wpdb;
 
 		// if the p2p table doesn't exist there is nothing for us to do, so bail
@@ -90,8 +100,8 @@ class P2P_Export {
 			scb_register_table( 'p2pmeta' );
 		}
 
-		add_filter( 'wxr_export_plugins', array( $this, 'register_plugin_for_export' ) );
-		add_action( 'wxr_unique_prefix_' . self::NAMESPACE_URI, array( $this, 'unique_prefix' ) );
+		add_filter( 'wxr_export_extension_namespaces', array( $this, 'register_plugin_for_export' ) );
+		add_filter( 'wxr_export_extension_markup', array( $this, 'markup_output' ) );
 		add_action( 'wxr_export_post', array( $this, 'write_rows' ), 10, 2 );
 	}
 
@@ -104,41 +114,18 @@ class P2P_Export {
 
 	 * @param array $plugins {
 	 *     @type string $prefix Our "preferred" namespace prefix.
-	 *     @type string $namespaceURI The namespaceURI for our extension elements/attributes.
-	 *     @type string $slug The "file path" for our plugin (i.e., the $plugin parameter to
-	 *                        activate_plugin()).  The "new" importer will eventually be able
-	 *                        to use this (and `$url`) to inform users peforming an import
-	 *                        that unless this plugin is installed/activated, then some information
-	 *                        in the WXR instance they are importing will not actually
-	 *                        be imported.
-	 *    @type string $url The URL from which our plugin can be downloaded if it is not already
-	 *                      installed.
+	 *     @type string $namespace-uri The namespaceURI for our extension elements/attributes.
 	 * }
 	 *
 	 * @filter wxr_export_plugins
 	 */
 	function register_plugin_for_export( $plugins ) {
 		$plugins[] = array(
-			'prefix' => $this->prefix,
-			'namespaceURI' => self::NAMESPACE_URI,
-			'slug' => basename( __DIR__) . '/' . basename( __FILE__),
-			'url' => 'https://github.com/pbiron/p2p-export-import',
+			'prefix' => self::P2P_PREFIX,
+			'namespace-uri' => self::P2P_NAMESPACE_URI,
 			);
 
 		return $plugins;
-	}
-
-	/**
-	 * Receive notification that the "preferred" namespace prefix we requested was already taken.
-	 *
-	 * @param string $prefix Prefix the exporter used in the namespace decl for our namespaceURI.
-	 *
-	 * @action wxr_unique_prefix_' . self::NAMESPACE_URI
-	 */
-	function unique_prefix( $prefix ) {
-		$this->prefix = $prefix ;
-
-		return;
 	}
 
 	/**
@@ -158,15 +145,19 @@ class P2P_Export {
 		global $wpdb;
 
 		$p2ps = $wpdb->get_results ( $wpdb->prepare( "SELECT * FROM $wpdb->p2p WHERE p2p_from = %d", $post->ID ) );
+		if ( empty( $p2ps ) ) {
+			return;
+		}
+
 		foreach ( $p2ps as $p2p ) {
 			$to = get_post( $p2p->p2p_to );
-			$writer->startElementNS( $this->prefix, 'p2p', null );
+			$writer->startElement( 'Q{' . self::P2P_NAMESPACE_URI . '}p2p' );
 
 			// note: no need to write p2p_id nor p2p_from
 
-			$writer->writeElementNS( $this->prefix, 'to', null, $to->post_name );
-			$writer->writeElementNS( $this->prefix, 'to_type', null, $to->post_type );
-			$writer->writeElementNS( $this->prefix, 'type', null, $p2p->p2p_type );
+			$writer->writeElement( 'Q{' . self::P2P_NAMESPACE_URI . '}to', $to->post_name );
+			$writer->writeElement( 'Q{' . self::P2P_NAMESPACE_URI . '}to_type', $to->post_type );
+			$writer->writeElement( 'Q{' . self::P2P_NAMESPACE_URI . '}type', $p2p->p2p_type );
 
 			if ( ! $this->meta_exists ) {
 				continue;
@@ -174,16 +165,39 @@ class P2P_Export {
 
 			$metas = $wpdb->get_results ( $wpdb->prepare( "SELECT * FROM $wpdb->p2pmeta WHERE p2p_id = %d", $p2p->p2p_id ) );
 			foreach ( $metas as $meta ) {
-				$writer->startElementNS( $this->prefix, 'meta', null );
+				$writer->startElement( 'Q{' . self::P2P_NAMESPACE_URI . '}meta' );
 
-				$writer->writeElementNS( $this->prefix, 'key', null, $meta->meta_key );
-				$writer->writeElementNS( $this->prefix, 'value', null, $meta->meta_value );
+				$writer->writeElement( 'Q{' . self::P2P_NAMESPACE_URI . '}key', $meta->meta_key );
+				$writer->writeElement( 'Q{' . self::P2P_NAMESPACE_URI . '}value', $meta->meta_value );
 
 				$writer->endElement(); // meta
 			}
 
 			$writer->endElement(); // p2p
 		}
+
+		$this->markup_output = true;
+	}
+
+	/**
+	 * Inform the exporter that we output extension markup.
+	 *
+	 * @param array $plugins
+	 * @return array
+	 */
+	function markup_output( $plugins ) {
+		if ( $this->markup_output ) {
+			$plugin_data = get_plugin_data( __FILE__ );
+
+			$plugins[] = array(
+				'namespace-uri' => self::P2P_NAMESPACE_URI,
+				'plugin-name' => $plugin_data['Name'],
+				'plugin-slug' => basename( __DIR__ ) . '/' . basename( __FILE__),
+				'plugin-uri' => $plugin_data['PluginURI'],
+			);
+		}
+
+		return $plugins;
 	}
 }
 
@@ -204,10 +218,11 @@ new P2P_Export();
  */
 class P2P_Import {
 	/**
-	 * Our namespaceURI
+	 * Our namespace URI.
+	 *
 	 * @var string
 	 */
-	const NAMESPACE_URI = 'http://scribu.net/wordpress/posts-to-posts/';
+	const P2P_NAMESPACE_URI = 'http://scribu.net/wordpress/posts-to-posts/';
 
 	protected $exists = array();
 	protected $requires_remapping = array();
@@ -222,6 +237,8 @@ class P2P_Import {
 		'type' => 'p2p_type',
 		);
 
+	protected $existed = 0;
+	protected $not_existed = 0;
 
 	/**
 	 * Hook actions and filters
@@ -229,8 +246,24 @@ class P2P_Import {
 	function __construct() {
 		add_action( 'import_start', array( $this, 'init_p2p' ) ) ;
 		add_action( 'import_end', array( $this, 'post_process' ) );
-		add_action( 'wxr_importer.parsed.post.' . self::NAMESPACE_URI,
+		add_action( 'wxr_importer.parsed.post.' . self::P2P_NAMESPACE_URI,
 			array( $this, 'parse_p2p' ), 10, 4);
+		add_filter( 'wxr_importer.extension_namespace_' . self::P2P_NAMESPACE_URI,
+			array( $this, 'can_handle' ) );
+	}
+
+	/**
+	 * Inform the importer that we are able to handle extension markup in the P2P namespace.
+	 *
+	 * @param array $plugins
+	 * @return array
+	 *
+	 * @filter 'wxr_importer.extension_namespace_' . self::P2P_NAMESPACE_URI
+	 */
+	function can_handle( $plugins ) {
+		$plugins[] = basename( __DIR__ ) . '/' . basename( __FILE__);
+
+		return $plugins;
 	}
 
 	/**
@@ -259,14 +292,17 @@ class P2P_Import {
 	 * }
 	 * @param DOMNode $node The DOMNode for $post_id.
 	 *
-	 * Note: For this demo plugin, we only need $post_id and $elements.  However,
-	 * other plugins might need them and hence I've had them passed to this method
+	 * Note: For this demo plugin, we only need $post_id and $p2ps.  However,
+	 * other plugins might need the other args; I've had them passed to this method
 	 * just to check that they are being passed as they should be.
 	 *
-	 * @action wxr_importer.parsed.post.' . self::NAMESPACE_URI
+	 * @action 'wxr_importer.parsed.post.' . self::P2P_NAMESPACE_URI
 	 */
 	function parse_p2p( $post_id, $p2ps, $parsed, $node ) {
 		foreach ( $p2ps as $p2p ) {
+			/**
+			 * @global wpdb $wpdb.
+			 */
 			global $wpdb;
 
 			$data = $metas = array();
@@ -307,6 +343,7 @@ class P2P_Import {
 			$to_id = $this->post_exists( $data['to'], $data['to_type'] );
 			if ( $to_id ) {
 				$data['to'] = $to_id;
+				$this->existed++;
 			}
 			else {
 				// the 'to' end of the relationship hasn't been imported yet
@@ -417,6 +454,9 @@ class P2P_Import {
 	 *
 	 * @param array $data Post data to check against.
 	 * @return int|bool Existing post ID if it exists, false otherwise.
+	 *
+	 * @todo generalize the key remapping code in importer-redux so that it
+	 * can be used by plugins like this
 	 */
 	protected function post_exists( $name, $post_type ) {
 		// Constant-time lookup if we prefilled
@@ -447,6 +487,9 @@ class P2P_Import {
 	 * at the time the 'from' end was imported.
 	 *
 	 * @action import_end
+	 *
+	 * @todo generalize the key remapping code in importer-redux so that it
+	 * can be used by plugins like this
 	 */
 	function post_process()
 	{
