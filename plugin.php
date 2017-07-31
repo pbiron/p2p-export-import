@@ -3,7 +3,7 @@
  * Plugin Name: P2P Export/Import
  * Description: Demonstrates how P2P information can be added to an export redux and
  * 	used by importer redux
- * Version: 0.1.1
+ * Version: 0.2
  * Author: Paul V. Biron/Sparrow Hawk Computing
  * Author URI: http://sparrowhawkcomputing.com/
  * Plugin URI: https://github.com/pbiron/p2p-export-import
