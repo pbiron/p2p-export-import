@@ -52,6 +52,10 @@ composer install
 
 ## Change Log
 
+### 0.2
+
+* Rewrite to use WP_XMLWriter
+
 ### 0.1.1
 
 * Fixed bug in `P2P_Import::remap_xml_keys()`
